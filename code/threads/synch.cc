@@ -61,6 +61,9 @@ Semaphore::GetName() const
 void
 Semaphore::P()
 {
+    #ifdef SEMAPHORE_TEST
+    DEBUG('s', "Wait from %s\n", this->name);
+    #endif
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
       // Disable interrupts.
 
@@ -81,6 +84,9 @@ Semaphore::P()
 void
 Semaphore::V()
 {
+    #ifdef SEMAPHORE_TEST
+    DEBUG('s', "Signal from %s\n", this->name);
+    #endif
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
 
     Thread *thread = queue->Pop();
