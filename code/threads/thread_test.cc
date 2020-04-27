@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef SEMAPHORE_TEST
+Semaphore Semaforo("Semaforo ThreadTest", 3);
+#endif
 
 /// Loop 10 times, yielding the CPU to another ready thread each iteration.
 ///
@@ -30,11 +33,20 @@ SimpleThread(void *name_)
     // If the lines dealing with interrupts are commented, the code will
     // behave incorrectly, because printf execution may cause race
     // conditions.
+    
+    #ifdef SEMAPHORE_TEST
+    Semaforo.P();
+    #endif
+
     for (unsigned num = 0; num < 10; num++) {
         printf("*** Thread `%s` is running: iteration %u\n", name, num);
         currentThread->Yield();
     }
     printf("!!! Thread `%s` has finished\n", name);
+
+    #ifdef SEMAPHORE_TEST
+    Semaforo.V();
+    #endif
 }
 
 /// Set up a ping-pong between several threads.
@@ -46,10 +58,11 @@ ThreadTest()
 {
     DEBUG('t', "Entering thread test\n");
 
-    char *name = new char [64];
-    strncpy(name, "2nd", 64);
-    Thread *newThread = new Thread(name);
-    newThread->Fork(SimpleThread, (void *) name);
-
+    char *nameList[4] = {"2nd", "3rd", "4th", "5th"}; 
+    int i;
+    for(i=0; i<4; i++){  
+      Thread *newThread = new Thread(nameList[i]);
+      newThread->Fork(SimpleThread, (void *) nameList[i]);
+    }
     SimpleThread((void *) "1st");
 }
