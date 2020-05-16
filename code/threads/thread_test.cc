@@ -20,6 +20,14 @@
 Semaphore Semaforo("Semaforo ThreadTest", 3);
 #endif
 
+#ifdef CONDITION_TEST
+//lock = new Lock("Condition lock");
+//condition = new Condition("Condition", lock);
+#include "synch_list.hh"
+SynchList<int *> *synchList = new SynchList<int *>();
+#endif
+
+
 /// Loop 10 times, yielding the CPU to another ready thread each iteration.
 ///
 /// * `name` points to a string with a thread name, just for debugging
@@ -33,7 +41,7 @@ SimpleThread(void *name_)
     // If the lines dealing with interrupts are commented, the code will
     // behave incorrectly, because printf execution may cause race
     // conditions.
-    
+
     #ifdef SEMAPHORE_TEST
     Semaforo.P();
     #endif
@@ -49,6 +57,19 @@ SimpleThread(void *name_)
     #endif
 }
 
+void
+Add(void *item_) {
+  int *item = (int *) item_;
+  DEBUG('t', "Adding number %d\n", item);
+  synchList->Append(item);
+}
+
+void
+Delete(void *ptr) {
+  int* item = synchList->Pop();
+  DEBUG('t', "Number %d deleted\n", item);
+}
+
 /// Set up a ping-pong between several threads.
 ///
 /// Do it by launching ten threads which call `SimpleThread`, and finally
@@ -58,11 +79,14 @@ ThreadTest()
 {
     DEBUG('t', "Entering thread test\n");
 
-    char *nameList[4] = {"2nd", "3rd", "4th", "5th"}; 
+    char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
     int i;
-    for(i=0; i<4; i++){  
+    for(i=0; i<5; i++){
       Thread *newThread = new Thread(nameList[i]);
-      newThread->Fork(SimpleThread, (void *) nameList[i]);
+      if(i%2)
+        newThread->Fork(Add, (void *) i);
+      else
+        newThread->Fork(Delete, (void *) nullptr);
     }
-    SimpleThread((void *) "1st");
+    Add((void *) 0);
 }
