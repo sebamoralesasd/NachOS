@@ -40,12 +40,18 @@ IsThreadStatus(ThreadStatus s)
 /// `Thread::Fork`.
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
-Thread::Thread(const char *threadName)
+Thread::Thread(const char *threadName, bool join)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
+    joinable = join;
+
+    if(joinable) {
+      channel = new Channel(name);
+    }
+
 #ifdef USER_PROGRAM
     space    = nullptr;
 #endif
@@ -163,6 +169,10 @@ Thread::Finish()
 
     DEBUG('t', "Finishing thread \"%s\"\n", GetName());
 
+    if(joinable) {
+      channel->Send(0);
+    }
+
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.
     // Not reached.
@@ -230,6 +240,15 @@ Thread::Sleep()
     }
 
     scheduler->Run(nextThread);  // Returns when we have been signalled.
+}
+
+void
+Thread::Join() {
+  int message;
+
+  if (joinable) {
+    channel->Receive(&message);
+  }
 }
 
 /// ThreadFinish, InterruptEnable
