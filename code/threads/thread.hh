@@ -101,7 +101,7 @@ private:
 public:
 
     /// Initialize a `Thread`.
-    Thread(const char *debugName, bool join = false);
+    Thread(const char *debugName, bool join = false, unsigned firstPriority = 0);
 
     /// Deallocate a Thread.
     ///
@@ -115,6 +115,8 @@ public:
     void Fork(VoidFunctionPtr func, void *arg);
 
     void Join();
+
+    unsigned GetPriority();
 
     /// Relinquish the CPU if any other thread is runnable.
     void Yield();
@@ -146,6 +148,8 @@ private:
     ThreadStatus status;
 
     const char *name;
+
+    unsigned priority;
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);

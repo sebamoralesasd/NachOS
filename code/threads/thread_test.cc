@@ -82,7 +82,7 @@ ThreadTest()
     char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
     int i;
     for(i=0; i<5; i++){
-      Thread *newThread = new Thread(nameList[i]);
+      Thread *newThread = new Thread(nameList[i], 0);
       if(i%2)
         newThread->Fork(Add, (void *) i);
       else

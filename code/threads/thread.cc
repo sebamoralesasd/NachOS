@@ -40,13 +40,15 @@ IsThreadStatus(ThreadStatus s)
 /// `Thread::Fork`.
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
-Thread::Thread(const char *threadName, bool join)
+Thread::Thread(const char *threadName, bool join, unsigned firstPriority)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
     joinable = join;
+    // Cota de prioridades.
+    priority = firstPriority > MAX_PRIORITY ? MAX_PRIORITY : firstPriority;
 
     if(joinable) {
       channel = new Channel(name);
@@ -249,6 +251,11 @@ Thread::Join() {
   if (joinable) {
     channel->Receive(&message);
   }
+}
+
+unsigned
+Thread::GetPriority() {
+  return priority;
 }
 
 /// ThreadFinish, InterruptEnable
