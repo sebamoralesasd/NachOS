@@ -128,6 +128,15 @@ void
 Lock::Acquire()
 {
     ASSERT(!IsHeldByCurrentThread());
+
+#ifdef INVPRIO
+    if (holder && holder->GetOldPriority() < holder->GetPriority()) {
+      // TODO: Agregar mensaje de debug
+      holder->SetPriority(currentThread->GetPriority());
+      scheduler->UpdatePriority(holder);
+    }
+#endif
+
     state->P();
     holder = currentThread;
 }
@@ -136,6 +145,14 @@ void
 Lock::Release()
 {
     ASSERT(IsHeldByCurrentThread());
+
+#ifdef INVPRIO
+    if (currentThread->GetOldPriority() < currentThread->GetPriority()) {
+      currentThread->SetPriority(currentThread->GetOldPriority());
+      scheduler->UpdatePriority(currentThread);
+    }
+#endif
+
     state->V();
     holder = nullptr;
 }

@@ -117,6 +117,9 @@ public:
     void Join();
 
     unsigned GetPriority();
+    unsigned GetOldPriority();
+
+    void SetPriority(unsigned newPriority);
 
     /// Relinquish the CPU if any other thread is runnable.
     void Yield();
@@ -150,6 +153,7 @@ private:
     const char *name;
 
     unsigned priority;
+    unsigned oldPriority;
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);

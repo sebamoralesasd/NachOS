@@ -49,6 +49,7 @@ Thread::Thread(const char *threadName, bool join, unsigned firstPriority)
     joinable = join;
     // Cota de prioridades.
     priority = firstPriority > MAX_PRIORITY ? MAX_PRIORITY : firstPriority;
+    oldPriority = priority;
 
     if(joinable) {
       channel = new Channel(name);
@@ -256,6 +257,16 @@ Thread::Join() {
 unsigned
 Thread::GetPriority() {
   return priority;
+}
+
+unsigned
+Thread::GetOldPriority() {
+  return oldPriority;
+}
+
+void
+Thread::SetPriority(unsigned newPriority) {
+  priority = newPriority;
 }
 
 /// ThreadFinish, InterruptEnable
