@@ -57,6 +57,7 @@ SimpleThread(void *name_)
     #endif
 }
 
+#ifdef CONDITION_TEST
 void
 Add(void *item_) {
   int *item = (int *) item_;
@@ -69,6 +70,7 @@ Delete(void *ptr) {
   int* item = synchList->Pop();
   DEBUG('t', "Number %d deleted\n", item);
 }
+#endif
 
 /// Set up a ping-pong between several threads.
 ///
@@ -81,6 +83,8 @@ ThreadTest()
 
     char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
     int i;
+
+    #ifdef CONDITION_TEST
     for(i=0; i<5; i++){
       Thread *newThread = new Thread(nameList[i], 0);
       if(i%2)
@@ -89,4 +93,5 @@ ThreadTest()
         newThread->Fork(Delete, (void *) nullptr);
     }
     Add((void *) 0);
+    #endif
 }
