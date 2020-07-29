@@ -20,6 +20,14 @@
 Semaphore Semaforo("Semaforo ThreadTest", 3);
 #endif
 
+#ifdef CONDITION_TEST
+//lock = new Lock("Condition lock");
+//condition = new Condition("Condition", lock);
+#include "synch_list.hh"
+SynchList<int *> *synchList = new SynchList<int *>();
+#endif
+
+
 /// Loop 10 times, yielding the CPU to another ready thread each iteration.
 ///
 /// * `name` points to a string with a thread name, just for debugging
@@ -33,7 +41,7 @@ SimpleThread(void *name_)
     // If the lines dealing with interrupts are commented, the code will
     // behave incorrectly, because printf execution may cause race
     // conditions.
-    
+
     #ifdef SEMAPHORE_TEST
     Semaforo.P();
     #endif
@@ -49,20 +57,75 @@ SimpleThread(void *name_)
     #endif
 }
 
+void
+Add(void *item_) {
+  int *item = (int *) item_;
+  DEBUG('t', "Adding number %d\n", item);
+  synchList->Append(item);
+}
+
+void
+Delete(void *ptr) {
+  int* item = synchList->Pop();
+  DEBUG('t', "Number %d deleted\n", item);
+}
+
 /// Set up a ping-pong between several threads.
 ///
 /// Do it by launching ten threads which call `SimpleThread`, and finally
 /// calling `SimpleThread` ourselves.
-void
-ThreadTest()
-{
-    DEBUG('t', "Entering thread test\n");
 
-    char *nameList[4] = {"2nd", "3rd", "4th", "5th"}; 
-    int i;
-    for(i=0; i<4; i++){  
-      Thread *newThread = new Thread(nameList[i]);
-      newThread->Fork(SimpleThread, (void *) nameList[i]);
-    }
-    SimpleThread((void *) "1st");
+Lock* lock;
+
+void High(void* args) {
+    lock->Acquire();
+    lock->Release();
+
+    printf("High priority task done.\n");
 }
+
+void Medium(void* args) {
+    printf("Medium priority infinite loop...\n");
+
+    while (1) currentThread->Yield();
+}
+
+void Low(void* args) {
+    lock->Acquire();
+        currentThread->Yield();
+    lock->Release();
+
+    printf("Low priority task done.\n");
+}
+
+void ThreadTest() {
+    lock = new Lock("Lock");
+
+    Thread *t4 = new Thread("High", false, 2);
+    Thread *t3 = new Thread("Medium 1", false, 1);
+    Thread *t2 = new Thread("Medium 2", false, 1);
+    Thread *t1 = new Thread("Low", false, 0);
+
+    t1->Fork(Low, nullptr);
+    currentThread->Yield();
+    t2->Fork(Medium, nullptr);
+    t3->Fork(Medium, nullptr);
+    t4->Fork(High, nullptr);
+}
+//
+// void
+// ThreadTest()
+// {
+//     DEBUG('t', "Entering thread test\n");
+//
+//     char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
+//     int i;
+//     for(i=0; i<5; i++){
+//       Thread *newThread = new Thread(nameList[i], 0);
+//       if(i%2)
+//         newThread->Fork(Add, (void *) i);
+//       else
+//         newThread->Fork(Delete, (void *) nullptr);
+//     }
+//     Add((void *) 0);
+// }

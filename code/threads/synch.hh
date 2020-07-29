@@ -108,6 +108,8 @@ private:
     const char *name;
 
     // Add other needed fields here.
+    Semaphore *state;
+    Thread *holder;
 };
 
 // This class defined a “condition variable”.
@@ -166,7 +168,31 @@ private:
     const char *name;
 
     // Other needed fields are to be added here.
+    Lock *lock;
+    int threadsSleeping;
+    List<Semaphore *> *sleepQueue;
 };
 
+class Channel {
+public:
+
+  Channel(const char *debugName);
+
+  ~Channel();
+
+  const char *GetName() const;
+
+  void Send(int message);
+  void Receive(int *message);
+
+private:
+
+  const char *name;
+
+  Lock *lock;
+  List<int> *buffer;
+  Condition *senders;
+  Condition *receivers;
+};
 
 #endif

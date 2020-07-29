@@ -67,7 +67,8 @@
 #include "system.hh"
 #include "lib/utility.hh"
 
-#include <stdio.h>
+//#include <stdio.h>
+#include <cstdio>
 #include <string.h>
 #ifdef NETWORK
     #include <stdlib.h>

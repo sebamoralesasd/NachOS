@@ -75,6 +75,9 @@ public:
     /// Remove first item from list.
     Item SortedPop(int *keyPtr);
 
+    /// Returns the head of the list.
+    Item Head();
+
 private:
 
     typedef ListElement<Item> ListNode;
@@ -298,6 +301,15 @@ List<Item>::SortedPop(int *keyPtr)
         *keyPtr = element->key;
     delete element;
     return thing;
+}
+
+
+template <class Item>
+Item
+List<Item>::Head()
+{
+  ASSERT(!IsEmpty());
+  return first->item;
 }
 
 

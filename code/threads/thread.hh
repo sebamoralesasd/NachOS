@@ -70,6 +70,8 @@ enum ThreadStatus {
     NUM_THREAD_STATUS
 };
 
+class Channel;
+
 /// The following class defines a “thread control block” -- which represents
 /// a single thread of execution.
 ///
@@ -92,10 +94,14 @@ private:
     /// All registers except for `stackTop`.
     HostMemoryAddress machineState[MACHINE_STATE_SIZE];
 
+    bool joinable;
+
+    Channel *channel;
+
 public:
 
     /// Initialize a `Thread`.
-    Thread(const char *debugName);
+    Thread(const char *debugName, bool join = false, unsigned firstPriority = 0);
 
     /// Deallocate a Thread.
     ///
@@ -107,6 +113,13 @@ public:
 
     /// Make thread run `(*func)(arg)`.
     void Fork(VoidFunctionPtr func, void *arg);
+
+    void Join();
+
+    unsigned GetPriority();
+    unsigned GetOldPriority();
+
+    void SetPriority(unsigned newPriority);
 
     /// Relinquish the CPU if any other thread is runnable.
     void Yield();
@@ -138,6 +151,9 @@ private:
     ThreadStatus status;
 
     const char *name;
+
+    unsigned priority;
+    unsigned oldPriority;
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);

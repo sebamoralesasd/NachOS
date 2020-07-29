@@ -24,6 +24,7 @@
 
 #include "synch.hh"
 #include "system.hh"
+#include <stdio.h>
 
 
 /// Initialize a semaphore, so that it can be used for synchronization.
@@ -104,10 +105,18 @@ Semaphore::V()
 /// case in the network assignment will not work!
 
 Lock::Lock(const char *debugName)
-{}
+{
+  name = debugName;
+  state = new Semaphore(debugName, 1);
+  holder = nullptr;
+}
 
 Lock::~Lock()
-{}
+{
+  name = nullptr;
+  delete state;
+  holder = nullptr;
+}
 
 const char *
 Lock::GetName() const
@@ -118,30 +127,55 @@ Lock::GetName() const
 void
 Lock::Acquire()
 {
-    // TODO
+    ASSERT(!IsHeldByCurrentThread());
+
+#ifdef INVPRIO
+    if (holder && holder->GetPriority() < currentThread->GetPriority()) {
+      // TODO: Agregar mensaje de debug
+      holder->SetPriority(currentThread->GetPriority());
+      scheduler->UpdatePriority(holder);
+    }
+#endif
+
+    state->P();
+    holder = currentThread;
 }
 
 void
 Lock::Release()
 {
-    // TODO
+    ASSERT(IsHeldByCurrentThread());
+
+#ifdef INVPRIO
+    if (currentThread->GetOldPriority() != currentThread->GetPriority()) {
+      currentThread->SetPriority(currentThread->GetOldPriority());
+      scheduler->UpdatePriority(currentThread);
+    }
+#endif
+
+    state->V();
+    holder = nullptr;
 }
 
 bool
 Lock::IsHeldByCurrentThread() const
 {
-    // TODO
-    return false;
+    return currentThread == holder;
 }
 
+// MARK: Condition variables
 Condition::Condition(const char *debugName, Lock *conditionLock)
 {
-    // TODO
+  lock = conditionLock;
+  threadsSleeping = 0;
+  name = debugName;
+  sleepQueue = new List<Semaphore *>;
 }
 
 Condition::~Condition()
 {
-    // TODO
+    lock = nullptr;
+    delete sleepQueue;
 }
 
 const char *
@@ -153,17 +187,107 @@ Condition::GetName() const
 void
 Condition::Wait()
 {
-    // TODO
+    ASSERT(lock->IsHeldByCurrentThread());
+
+    // Create a Semaphore to sleep the current thread
+    char *semaphoreName = new char [64];
+    snprintf(semaphoreName, 64, "Condition variable %s Semaphore of Thread %s",
+             GetName(), currentThread->GetName());
+    Semaphore *newSemaphore = new Semaphore(semaphoreName, 0);
+    delete semaphoreName;
+
+    threadsSleeping++;
+    sleepQueue->Append(newSemaphore);
+
+    lock->Release();
+    newSemaphore->P();
+
+    // Acquire lock when the thread had woke up
+    lock->Acquire();
+
+    delete newSemaphore;
 }
 
 void
 Condition::Signal()
 {
-    // TODO
+    ASSERT(lock->IsHeldByCurrentThread());
+
+    if (threadsSleeping > 0) {
+      threadsSleeping--;
+      Semaphore *waker = sleepQueue->Pop();
+      waker->V();
+    }
 }
 
 void
 Condition::Broadcast()
 {
-    // TODO
+    ASSERT(lock->IsHeldByCurrentThread());
+
+    while(threadsSleeping > 0) {
+      Signal();
+    }
+}
+
+// MARK: Channel
+
+Channel::Channel(const char *debugName)
+{
+  lock = new Lock(debugName);
+
+  char *conditionName = new char [64];
+  snprintf(conditionName, 64, "Senders condition %s", debugName);
+  senders = new Condition(conditionName, lock);
+
+  snprintf(conditionName, 64, "Receivers condition %s", debugName);
+  receivers = new Condition(conditionName, lock);
+
+  buffer = new List<int>;
+
+  delete conditionName;
+}
+
+
+Channel::~Channel() {
+  delete lock;
+  delete senders;
+  delete receivers;
+  delete buffer;
+}
+
+const char *
+Channel::GetName() const {
+  return name;
+}
+
+void
+Channel::Send(int message) {
+  lock->Acquire();
+  buffer->Append(message);
+  receivers->Signal();
+
+  int head = buffer->Head();
+
+  // Esperar hasta que el mensaje se haya copiado en el buffer.
+  while (!buffer->IsEmpty() && head == buffer->Head()) {
+    senders->Wait();
+  }
+
+  lock->Release();
+}
+
+void
+Channel::Receive(int *message) {
+  lock->Acquire();
+
+  // Esperar hasta que haya un mensaje en el buffer.
+  while (buffer->IsEmpty()) {
+    receivers->Wait();
+  }
+
+  *message = buffer->Pop();
+  senders->Signal();
+
+  lock->Release();
 }
