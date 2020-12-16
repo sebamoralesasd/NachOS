@@ -13,6 +13,7 @@
 #include "machine/console.hh"
 #include "threads/synch.hh"
 #include "threads/system.hh"
+#include "userprog/synchConsole.hh"
 
 #include <stdio.h>
 
@@ -87,5 +88,18 @@ ConsoleTest(const char *in, const char *out)
         writeDone->P();        // Wait for write to finish.
         if (ch == 'q')
             return;  // If `q`, then quit.
+    }
+}
+
+void
+SynchConsoleTest() {
+    synchConsole = new SynchConsole();
+
+    for (;;) {
+        char ch = synchConsole->GetChar();
+        synchConsole->PutChar(ch);
+        if (ch == 'q') 
+            return;
+
     }
 }

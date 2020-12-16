@@ -1,8 +1,11 @@
 Makefile.depends
 nachos
 *.o
+*.gch
 swtch.s
 DISK
+
+nachos.code-workspace
 
 /code/check.log
 

@@ -39,7 +39,8 @@
 #define NACHOS_THREADS_THREAD__HH
 
 
-#include "lib/utility.hh"
+#include "../lib/utility.hh"
+#include "../lib/table.hh"
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
@@ -166,6 +167,8 @@ private:
     /// state while executing kernel code.
     int userRegisters[NUM_TOTAL_REGS];
 
+    Table<OpenFile *> *fileTable;
+
 public:
 
     // Save user-level register state.
@@ -176,6 +179,8 @@ public:
 
     // User code this thread is running.
     AddressSpace *space;
+
+    Table<OpenFile *>* GetFileTable();
 #endif
 };
 

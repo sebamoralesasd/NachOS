@@ -84,6 +84,7 @@ void PerformanceTest(void);
 void StartProcess(const char *file);
 void ConsoleTest(const char *in, const char *out);
 void MailTest(int networkID);
+void SynchConsoleTest();
 
 static inline void
 PrintVersion()
@@ -134,6 +135,9 @@ main(int argc, char **argv)
             interrupt->Halt();  // Once we start the console, then Nachos
                                 // will loop forever waiting for console
                                 // input.
+        } else if (!strcmp(*argv, "-sc")) {
+            SynchConsoleTest();
+            interrupt->Halt();
         }
 #endif
 #ifdef FILESYS

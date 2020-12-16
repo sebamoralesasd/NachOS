@@ -57,6 +57,7 @@ Thread::Thread(const char *threadName, bool join, unsigned firstPriority)
 
 #ifdef USER_PROGRAM
     space    = nullptr;
+    fileTable = new Table<OpenFile *>;
 #endif
 }
 
@@ -323,6 +324,11 @@ Thread::StackAllocate(VoidFunctionPtr func, void *arg)
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
+
+Table<OpenFile *>*
+Thread::GetFileTable() {
+  return fileTable;
+}
 
 /// Save the CPU state of a user program on a context switch.
 ///
