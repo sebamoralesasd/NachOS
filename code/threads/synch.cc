@@ -130,7 +130,7 @@ Lock::Acquire()
     ASSERT(!IsHeldByCurrentThread());
 
 #ifdef INVPRIO
-    if (holder && holder->GetOldPriority() < holder->GetPriority()) {
+    if (holder && holder->GetPriority() < currentThread->GetPriority()) {
       // TODO: Agregar mensaje de debug
       holder->SetPriority(currentThread->GetPriority());
       scheduler->UpdatePriority(holder);
@@ -147,7 +147,7 @@ Lock::Release()
     ASSERT(IsHeldByCurrentThread());
 
 #ifdef INVPRIO
-    if (currentThread->GetOldPriority() < currentThread->GetPriority()) {
+    if (currentThread->GetOldPriority() != currentThread->GetPriority()) {
       currentThread->SetPriority(currentThread->GetOldPriority());
       scheduler->UpdatePriority(currentThread);
     }
@@ -267,8 +267,10 @@ Channel::Send(int message) {
   buffer->Append(message);
   receivers->Signal();
 
+  int head = buffer->Head();
+
   // Esperar hasta que el mensaje se haya copiado en el buffer.
-  while (!buffer->IsEmpty()) {
+  while (!buffer->IsEmpty() && head == buffer->Head()) {
     senders->Wait();
   }
 

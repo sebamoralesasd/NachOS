@@ -72,26 +72,57 @@ Delete(void *ptr) {
 }
 #endif
 
-/// Set up a ping-pong between several threads.
-///
-/// Do it by launching ten threads which call `SimpleThread`, and finally
-/// calling `SimpleThread` ourselves.
-void
-ThreadTest()
-{
-    DEBUG('t', "Entering thread test\n");
+Lock* lock;
 
-    char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
-    int i;
+void High(void* args) {
+    lock->Acquire();
+    lock->Release();
 
-    #ifdef CONDITION_TEST
-    for(i=0; i<5; i++){
-      Thread *newThread = new Thread(nameList[i], 0);
-      if(i%2)
-        newThread->Fork(Add, (void *) i);
-      else
-        newThread->Fork(Delete, (void *) nullptr);
-    }
-    Add((void *) 0);
-    #endif
+    printf("High priority task done.\n");
 }
+
+void Medium(void* args) {
+    printf("Medium priority infinite loop...\n");
+
+    while (1) currentThread->Yield();
+}
+
+void Low(void* args) {
+    lock->Acquire();
+        currentThread->Yield();
+    lock->Release();
+
+    printf("Low priority task done.\n");
+}
+
+void ThreadTest() {
+    lock = new Lock("Lock");
+
+    Thread *t4 = new Thread("High", false, 2);
+    Thread *t3 = new Thread("Medium 1", false, 1);
+    Thread *t2 = new Thread("Medium 2", false, 1);
+    Thread *t1 = new Thread("Low", false, 0);
+
+    t1->Fork(Low, nullptr);
+    currentThread->Yield();
+    t2->Fork(Medium, nullptr);
+    t3->Fork(Medium, nullptr);
+    t4->Fork(High, nullptr);
+}
+//
+// void
+// ThreadTest()
+// {
+//     DEBUG('t', "Entering thread test\n");
+//
+//     char *nameList[5] = {"1st","2nd", "3rd", "4th", "5th"};
+//     int i;
+//     for(i=0; i<5; i++){
+//       Thread *newThread = new Thread(nameList[i], 0);
+//       if(i%2)
+//         newThread->Fork(Add, (void *) i);
+//       else
+//         newThread->Fork(Delete, (void *) nullptr);
+//     }
+//     Add((void *) 0);
+// }
