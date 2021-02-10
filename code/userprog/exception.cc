@@ -24,8 +24,8 @@
 
 #include "transfer.hh"
 #include "syscall.h"
-#include "filesys/directory_entry.hh"
-#include "threads/system.hh"
+#include "../filesys/directory_entry.hh"
+#include "../threads/system.hh"
 
 #include <stdio.h>
 
@@ -91,21 +91,153 @@ SyscallHandler(ExceptionType _et)
 
         case SC_CREATE: {
             int filenameAddr = machine->ReadRegister(4);
-            if (filenameAddr == 0)
-                DEBUG('e', "Error: address to filename string is null.\n");
 
+            if (!filenameAddr) {
+              DEBUG('e', "Error: address to filename string is null.\n");
+              break;
+            }
+
+            DEBUG('e', "Filename address: %d\n", filenameAddr);
             char filename[FILE_NAME_MAX_LEN + 1];
-            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
-                DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
-                      FILE_NAME_MAX_LEN);
+            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename)) {
+              DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
+                FILE_NAME_MAX_LEN);
+              break;
+            }
 
             DEBUG('e', "`Create` requested for file `%s`.\n", filename);
+            ASSERT(fileSystem->Create(filename, 0));
+            DEBUG('e', "File `%s` created.\n", filename);
             break;
+        }
+
+        case SC_READ: {
+          int bufferAddr = machine->ReadRegister(4);
+          int bufferSize = machine->ReadRegister(5);
+          OpenFileId fd = machine->ReadRegister(6);
+
+          int i;
+
+          if(!bufferAddr)
+            DEBUG('e', "Error: address to buffer is null.\n");
+          else if (bufferSize < 0)
+            DEBUG('e',"Error: invalid size.\n");
+          else if (fd == CONSOLE_OUTPUT || fd < 0)
+            DEBUG('e', "Error: invalid file descriptor.\n");
+          else if (!currentThread->GetFileTable()->HasKey(fd))
+            DEBUG('e', "Could not open file descriptor");
+          else {
+            char read[bufferSize+1];
+
+            if (fd == CONSOLE_OUTPUT) {
+              for(i=0; i < bufferSize; i++)
+                read[i] = synchConsole->GetChar();
+              read[i--] = '\0';
+            } else {
+              i = currentThread->GetFileTable()->Get(fd)->Read(read, bufferSize);
+            }
+
+            DEBUG('e', "String read: %s. Size: %d\n", read, i);
+          }
+
+          machine->WriteRegister(2, i);
+          break;
+        }
+
+        case SC_WRITE: {
+          DEBUG('e', "`Write`, initiated by user program.\n");
+
+          int stringAddress = machine->ReadRegister(4);
+          int stringLength = machine->ReadRegister(5);
+          OpenFileId fileID = machine->ReadRegister(6);
+
+          DEBUG('e', "`Write` request: \n");
+          DEBUG('e',  "StrAddr: %d, length: %d, fileID: %d\n",
+                stringAddress, stringLength, fileID);
+
+          if (!stringAddress)
+            DEBUG('e', "Error: address to filename is null.\n");
+          else if (stringLength < 0)
+            DEBUG('e', "Invalid size.\n");
+          else if (fileID < CONSOLE_OUTPUT) {
+            DEBUG('e', "Error: invalid file descriptor.\n");
+          } else if (!currentThread->GetFileTable()->HasKey(fileID))
+              DEBUG('e', "Error: could not open file descriptor.\n"); 
+          else {
+            char stringToWrite[stringLength];
+
+          ReadBufferFromUser(stringAddress, stringToWrite, stringLength);
+          DEBUG('e', "Writing %s", stringToWrite);
+
+          if (fileID == CONSOLE_OUTPUT)
+            for (int i=0; i < stringLength; i++)
+              synchConsole->PutChar(stringToWrite[i]);
+          else
+            currentThread->GetFileTable()->Get(fileID)->Write(stringToWrite, stringLength);
+
+          break;
+          }
+
+        }
+
+        case SC_OPEN: {
+          DEBUG('e', "Open, initiated by user program.\n");
+
+          int filenameAddr = machine->ReadRegister(4);
+          DEBUG('e', "Filename address: %d\n", filenameAddr);
+
+          if (!filenameAddr) {
+            DEBUG('e', "Error: address to filename string is null.\n");
+            break;
+          }
+
+          char filename[FILE_NAME_MAX_LEN + 1];
+
+          if (!ReadStringFromUser(filenameAddr, filename, sizeof filename)) {
+            DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
+              FILE_NAME_MAX_LEN);
+            break;
+          }
+
+          DEBUG('e', "`Open` requested for file `%s`.\n", filename);
+
+          OpenFile *file = fileSystem->Open(filename);
+
+          if (!file) {
+            DEBUG('e', "Error: file `%s` not found.\n", filename);
+            machine->WriteRegister(2, -1);
+            break;
+          } else {
+            int fd = currentThread->GetFileTable()->Add(file);
+            DEBUG('e', "File %s opened. Fd assigned: %s.\n", file, fd);
+
+            machine->WriteRegister(2, fd);
+          }
+
+        break;
+
         }
 
         case SC_CLOSE: {
             int fid = machine->ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
+            
+            if(fid < 0)
+              DEBUG('e',"Error: invalid file descriptor.\n");
+            else if(!currentThread->GetFileTable()->HasKey(fid))
+              DEBUG('e', "Error: could not open file descriptor.\n");
+            else {
+              currentThread->GetFileTable()->Remove(fid);
+              DEBUG('e',"File closed.\n");
+            }
+
+            break;
+        }
+
+        case SC_EXIT: {
+            int status = machine->ReadRegister(4);
+            DEBUG('e', "Exiting with status: %d.\n", status);
+            currentThread->Finish(status);
             break;
         }
 
