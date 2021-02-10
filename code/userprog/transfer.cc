@@ -4,14 +4,13 @@
 
 
 #include "transfer.hh"
-#include "lib/utility.hh"
-#include "threads/system.hh"
+#include "../threads/system.hh"
+#include "../lib/utility.hh"
 
 
 void ReadBufferFromUser(int userAddress, char *outBuffer,
                         unsigned byteCount)
 {
-    // TODO: implement.
     ASSERT(userAddress != 0);
     ASSERT(outBuffer != nullptr);
 

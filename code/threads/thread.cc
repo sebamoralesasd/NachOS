@@ -58,6 +58,8 @@ Thread::Thread(const char *threadName, bool join, unsigned firstPriority)
 #ifdef USER_PROGRAM
     space    = nullptr;
     fileTable = new Table<OpenFile *>;
+    fileTable->Add(nullptr); // CONSOLE_INPUT
+    fileTable->Add(nullptr); // CONSOLE_OUTPUT
 #endif
 }
 
@@ -77,6 +79,16 @@ Thread::~Thread()
     if (stack != nullptr)
         SystemDep::DeallocBoundedArray((char *) stack,
                                        STACK_SIZE * sizeof *stack);
+
+#ifdef USER_PROGRAM
+    ASSERT(space);
+    for(unsigned i=2; i < fileTable->SIZE; i++) {
+        if (fileTable->HasKey(i)) {
+            delete fileTable->Remove(i);
+        }
+    }
+    delete space;
+#endif
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
@@ -166,15 +178,15 @@ Thread::Print() const
 /// NOTE: we disable interrupts, so that we do not get a time slice between
 /// setting `threadToBeDestroyed`, and going to sleep.
 void
-Thread::Finish()
+Thread::Finish(int value)
 {
     interrupt->SetLevel(INT_OFF);
     ASSERT(this == currentThread);
 
-    DEBUG('t', "Finishing thread \"%s\"\n", GetName());
+    DEBUG('t', "Finishing thread %s with value %d\n", GetName(), value);
 
     if(joinable) {
-      channel->Send(0);
+      channel->Send(value);
     }
 
     threadToBeDestroyed = currentThread;
@@ -246,13 +258,15 @@ Thread::Sleep()
     scheduler->Run(nextThread);  // Returns when we have been signalled.
 }
 
-void
+int
 Thread::Join() {
   int message;
 
   if (joinable) {
     channel->Receive(&message);
   }
+
+  return message;
 }
 
 unsigned
@@ -278,7 +292,7 @@ Thread::SetPriority(unsigned newPriority) {
 static void
 ThreadFinish()
 {
-    currentThread->Finish();
+    currentThread->Finish(0);
 }
 
 static void

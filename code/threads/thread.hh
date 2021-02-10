@@ -115,7 +115,7 @@ public:
     /// Make thread run `(*func)(arg)`.
     void Fork(VoidFunctionPtr func, void *arg);
 
-    void Join();
+    int Join();
 
     unsigned GetPriority();
     unsigned GetOldPriority();
@@ -129,7 +129,7 @@ public:
     void Sleep();
 
     /// The thread is done executing.
-    void Finish();
+    void Finish(int value);
 
     /// Check if thread has overflowed its stack.
     void CheckOverflow() const;
