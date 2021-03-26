@@ -60,6 +60,7 @@ Thread::Thread(const char *threadName, bool join, unsigned firstPriority)
     fileTable = new Table<OpenFile *>;
     fileTable->Add(nullptr); // CONSOLE_INPUT
     fileTable->Add(nullptr); // CONSOLE_OUTPUT
+    threadID = threadTable->Add(this);
 #endif
 }
 
@@ -87,6 +88,7 @@ Thread::~Thread()
             delete fileTable->Remove(i);
         }
     }
+    threadTable->Remove(threadID);
     delete space;
 #endif
 }

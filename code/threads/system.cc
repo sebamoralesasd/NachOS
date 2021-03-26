@@ -22,6 +22,7 @@
 ///
 /// These are all initialized and de-allocated by this file.
 
+Table<Thread*> *threadTable;    // All threads running in the system.
 Thread *currentThread;        ///< The thread we are running now.
 Thread *threadToBeDestroyed;  ///< The thread that just finished.
 Scheduler *scheduler;         ///< The ready list.
@@ -140,6 +141,7 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-s"))
             debugUserProg = true;
+        threadTable = new Table<Thread*>();
 #endif
 #ifdef FILESYS_NEEDED
         if (!strcmp(*argv, "-f"))

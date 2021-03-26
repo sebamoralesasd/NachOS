@@ -168,6 +168,7 @@ private:
     int userRegisters[NUM_TOTAL_REGS];
 
     Table<OpenFile *> *fileTable;
+    int threadID;
 
 public:
 

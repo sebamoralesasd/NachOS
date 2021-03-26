@@ -25,7 +25,7 @@ extern void Initialize(int argc, char **argv);
 // Cleanup, called when Nachos is done.
 extern void Cleanup();
 
-
+extern Table<Thread*> *threadTable;   // All threads running in the system.
 extern Thread *currentThread;        ///< The thread holding the CPU.
 extern Thread *threadToBeDestroyed;  ///< The thread that just finished.
 extern Scheduler *scheduler;         ///< The ready list.
