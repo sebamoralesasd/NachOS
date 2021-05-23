@@ -46,6 +46,7 @@ SynchDisk *synchDisk;
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
 Machine *machine;  ///< User program memory and registers.
 SynchConsole *synchConsole;
+Bitmap *physMem;
 #endif
 
 #ifdef NETWORK
@@ -188,6 +189,7 @@ Initialize(int argc, char **argv)
     Debugger *d = debugUserProg ? new Debugger : nullptr;
     machine = new Machine(d);  // This must come first.
     synchConsole = new SynchConsole();
+    physMem = new Bitmap(NUM_PHYS_PAGES);
     SetExceptionHandlers();
 #endif
 
@@ -220,6 +222,7 @@ Cleanup()
 #ifdef USER_PROGRAM
     delete machine;
     delete synchConsole;
+    delete physMem;
 #endif
 
 #ifdef FILESYS_NEEDED

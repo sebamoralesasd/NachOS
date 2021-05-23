@@ -36,6 +36,10 @@ public:
     ///   program; it contains the object code to load into memory.
     AddressSpace(OpenFile *executable_file);
 
+    /// Obtener la dirección real de la memoria a partir de la dirección
+    /// virtual.
+    int GetRealAddr(int virtualAddr);
+
     /// De-allocate an address space.
     ~AddressSpace();
 
