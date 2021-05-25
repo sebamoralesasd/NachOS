@@ -67,7 +67,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     if (codeSize > 0)
     {
         uint32_t virtualAddr = exe.GetCodeAddr();
-        DEBUG('a', "Initializing code segment, at 0x%X, size %u\n",
+        DEBUG('a', "Initializing code segment. Number of pages: %u, size: %u\n",
               codeSize / PAGE_SIZE, codeSize);
 
         for (unsigned i = 0; i < codeSize; i++)
@@ -75,13 +75,13 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
             int realAddr = GetRealAddr(virtualAddr + i);
             DEBUG('a', "Writing %d from virtual addr 0x%X to real addr 0x%X\n",
                   i, virtualAddr + i, realAddr);
-            exe.ReadCodeBlock(&(mainMemory[realAddr]), 1, virtualAddr + i);
+            exe.ReadCodeBlock(&(mainMemory[realAddr]), 1, i);
         }
     }
     if (initDataSize > 0)
     {
         uint32_t virtualAddr = exe.GetInitDataAddr();
-        DEBUG('a', "Initializing data segment, at 0x%X, size %u\n",
+        DEBUG('a', "Initializing data segment. Number of pages: %u, size %u\n",
               initDataSize / PAGE_SIZE, initDataSize);
 
         for (unsigned i = 0; i < initDataSize; i++)
@@ -89,7 +89,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
             int realAddr = GetRealAddr(virtualAddr + i);
             DEBUG('a', "Writing %d from virtual addr 0x%X to real addr 0x%X\n",
                   i, virtualAddr + i, realAddr);
-            exe.ReadCodeBlock(&(mainMemory[realAddr]), 1, virtualAddr + i);
+            exe.ReadDataBlock(&(mainMemory[realAddr]), 1, i);
         }
     }
 }
