@@ -209,7 +209,7 @@ SyscallHandler(ExceptionType _et)
             break;
           } else {
             int fd = currentThread->GetFileTable()->Add(file);
-            DEBUG('e', "File %s opened. Fd assigned: %s.\n", file, fd);
+            DEBUG('e', "File %s opened. Fd assigned: %d.\n", file, fd);
 
             machine->WriteRegister(2, fd);
           }
